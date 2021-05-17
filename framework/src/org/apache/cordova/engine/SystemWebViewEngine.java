@@ -162,6 +162,7 @@ public class SystemWebViewEngine implements CordovaWebViewEngine {
         // Jellybean rightfully tried to lock this down. Too bad they didn't give us a whitelist
         // while we do this
         settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setAllowFileAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
 
         // Enable database
