@@ -18,26 +18,45 @@
 */
 
 var rewire = require('rewire');
-var check_reqs = rewire('../../bin/templates/cordova/lib/check_reqs');
-var android_sdk = require('../../bin/templates/cordova/lib/android_sdk');
+var android_sdk = require('../../lib/android_sdk');
 var fs = require('fs-extra');
 var path = require('path');
 var events = require('cordova-common').events;
 var which = require('which');
 
-// This should match /bin/templates/project/build.gradle
-const DEFAULT_TARGET_API = 29;
+const {
+    SDK_VERSION: DEFAULT_TARGET_API
+} = require('../../lib/gradle-config-defaults');
 
 describe('check_reqs', function () {
+    let check_reqs;
+    beforeEach(() => {
+        check_reqs = rewire('../../lib/check_reqs');
+    });
+
     var original_env;
     beforeAll(function () {
-        original_env = Object.create(process.env);
+        original_env = Object.assign({}, process.env);
     });
     afterEach(function () {
-        Object.keys(original_env).forEach(function (k) {
-            process.env[k] = original_env[k];
+        // process.env has some special behavior, so we do not
+        // replace it but only restore its original properties
+        Object.keys(process.env).forEach(k => {
+            delete process.env[k];
+        });
+        Object.assign(process.env, original_env);
+    });
+
+    describe('check_java', () => {
+        it('should return the version', async () => {
+            check_reqs.__set__({
+                java: { getVersion: async () => ({ version: '1.8.0' }) }
+            });
+
+            await expectAsync(check_reqs.check_java()).toBeResolvedTo({ version: '1.8.0' });
         });
     });
+
     describe('check_android', function () {
         describe('find and set ANDROID_HOME when ANDROID_HOME and ANDROID_SDK_ROOT is not set', function () {
             beforeEach(function () {
@@ -55,9 +74,6 @@ describe('check_reqs', function () {
                     process.env.ProgramFiles = 'windows-program-files';
                     return check_reqs.check_android().then(function () {
                         expect(process.env.ANDROID_SDK_ROOT).toContain('windows-local-app-data');
-                    }).finally(function () {
-                        delete process.env.LOCALAPPDATA;
-                        delete process.env.ProgramFiles;
                     });
                 });
                 it('it should set ANDROID_SDK_ROOT on Darwin', () => {
@@ -66,8 +82,6 @@ describe('check_reqs', function () {
                     process.env.HOME = 'home is where the heart is';
                     return check_reqs.check_android().then(function () {
                         expect(process.env.ANDROID_SDK_ROOT).toContain('home is where the heart is');
-                    }).finally(function () {
-                        delete process.env.HOME;
                     });
                 });
             });
@@ -75,34 +89,6 @@ describe('check_reqs', function () {
                 beforeEach(function () {
                     spyOn(fs, 'realpathSync').and.callFake(function (path) {
                         return path;
-                    });
-                });
-                it('should set ANDROID_SDK_ROOT based on `android` command if command exists in a SDK-like directory structure', () => {
-                    spyOn(fs, 'existsSync').and.returnValue(true);
-                    spyOn(which, 'sync').and.callFake(function (cmd) {
-                        if (cmd === 'android') {
-                            return '/android/sdk/tools/android';
-                        } else {
-                            return null;
-                        }
-                    });
-                    return check_reqs.check_android().then(function () {
-                        expect(process.env.ANDROID_SDK_ROOT).toEqual('/android/sdk');
-                    });
-                });
-                it('should error out if `android` command exists in a non-SDK-like directory structure', () => {
-                    spyOn(which, 'sync').and.callFake(function (cmd) {
-                        if (cmd === 'android') {
-                            return '/just/some/random/path/android';
-                        } else {
-                            return null;
-                        }
-                    });
-                    return check_reqs.check_android().then(() => {
-                        fail('Expected promise to be rejected');
-                    }, err => {
-                        expect(err).toEqual(jasmine.any(Error));
-                        expect(err.message).toContain('update your PATH to include valid path');
                     });
                 });
                 it('should set ANDROID_SDK_ROOT based on `adb` command if command exists in a SDK-like directory structure', () => {
@@ -220,9 +206,6 @@ describe('check_reqs', function () {
                 process.env.ANDROID_SDK_ROOT = 'let the children play';
                 spyOn(fs, 'existsSync').and.returnValue(true);
             });
-            afterEach(function () {
-                delete process.env.ANDROID_SDK_ROOT;
-            });
             it('should add tools/bin,tools,platform-tools to PATH if `avdmanager`,`android`,`adb` is not found', () => {
                 return check_reqs.check_android().then(function () {
                     expect(process.env.PATH).toContain('let the children play' + path.sep + 'tools');
@@ -243,20 +226,20 @@ describe('check_reqs', function () {
                 });
             });
 
-            it('with ANDROID_SDK_ROOT / without ANDROID_HOME', () => {
+            it('with ANDROID_SDK_ROOT / without ANDROID_HOME', async () => {
                 process.env.ANDROID_SDK_ROOT = '/android/sdk/root';
-                expectAsync(check_reqs.check_gradle()).toBeResolvedTo('/android/sdk/root/bin/gradle');
+                await expectAsync(check_reqs.check_gradle()).toBeResolvedTo('/android/sdk/root/bin/gradle');
             });
 
-            it('with ANDROID_SDK_ROOT / with ANDROID_HOME', () => {
+            it('with ANDROID_SDK_ROOT / with ANDROID_HOME', async () => {
                 process.env.ANDROID_SDK_ROOT = '/android/sdk/root';
                 process.env.ANDROID_HOME = '/android/sdk/home';
-                expectAsync(check_reqs.check_gradle()).toBeResolvedTo('/android/sdk/root/bin/gradle');
+                await expectAsync(check_reqs.check_gradle()).toBeResolvedTo('/android/sdk/root/bin/gradle');
             });
 
-            it('without ANDROID_SDK_ROOT / with ANDROID_HOME', () => {
+            it('without ANDROID_SDK_ROOT / with ANDROID_HOME', async () => {
                 process.env.ANDROID_HOME = '/android/sdk/home';
-                expectAsync(check_reqs.check_gradle()).toBeResolvedTo('/android/sdk/home/bin/gradle');
+                await expectAsync(check_reqs.check_gradle()).toBeResolvedTo('/android/sdk/home/bin/gradle');
             });
 
             it('without ANDROID_SDK_ROOT / without ANDROID_HOME', () => {
@@ -279,6 +262,7 @@ describe('check_reqs', function () {
     });
 
     describe('get_target', function () {
+        const projectRoot = 'fakeProjectRoot';
         var ConfigParser;
         var getPreferenceSpy;
         beforeEach(function () {
@@ -289,68 +273,40 @@ describe('check_reqs', function () {
             check_reqs.__set__('ConfigParser', ConfigParser);
         });
 
-        it('should retrieve target from framework project.properties file', function () {
-            var target = check_reqs.get_target();
+        it('should retrieve DEFAULT_TARGET_API', function () {
+            var target = check_reqs.get_target(projectRoot);
             expect(target).toBeDefined();
             expect(target).toContain('android-' + DEFAULT_TARGET_API);
         });
 
-        it('should throw error if target cannot be found', function () {
-            spyOn(fs, 'existsSync').and.returnValue(false);
-            expect(function () {
-                check_reqs.get_target();
-            }).toThrow();
-        });
-
         it('should override target from config.xml preference', () => {
-            var realExistsSync = fs.existsSync;
-            spyOn(fs, 'existsSync').and.callFake(function (path) {
-                if (path.indexOf('config.xml') > -1) {
-                    return true;
-                } else {
-                    return realExistsSync.call(fs, path);
-                }
-            });
+            spyOn(fs, 'existsSync').and.returnValue(true);
+            getPreferenceSpy.and.returnValue(String(DEFAULT_TARGET_API + 1));
 
-            getPreferenceSpy.and.returnValue(DEFAULT_TARGET_API + 1);
-
-            var target = check_reqs.get_target();
+            var target = check_reqs.get_target(projectRoot);
 
             expect(getPreferenceSpy).toHaveBeenCalledWith('android-targetSdkVersion', 'android');
             expect(target).toBe('android-' + (DEFAULT_TARGET_API + 1));
         });
 
         it('should fallback to default target if config.xml has invalid preference', () => {
-            var realExistsSync = fs.existsSync;
-            spyOn(fs, 'existsSync').and.callFake(function (path) {
-                if (path.indexOf('config.xml') > -1) {
-                    return true;
-                } else {
-                    return realExistsSync.call(fs, path);
-                }
-            });
+            spyOn(fs, 'existsSync').and.returnValue(true);
+            getPreferenceSpy.and.returnValue('android-99');
 
-            getPreferenceSpy.and.returnValue(NaN);
-
-            var target = check_reqs.get_target();
+            var target = check_reqs.get_target(projectRoot);
 
             expect(getPreferenceSpy).toHaveBeenCalledWith('android-targetSdkVersion', 'android');
             expect(target).toBe('android-' + DEFAULT_TARGET_API);
         });
 
         it('should warn if target sdk preference is lower than the minimum required target SDK', () => {
-            var realExistsSync = fs.existsSync;
-            spyOn(fs, 'existsSync').and.callFake(function (path) {
-                if (path.indexOf('config.xml') > -1) {
-                    return true;
-                } else {
-                    return realExistsSync.call(fs, path);
-                }
-            });
+            spyOn(fs, 'existsSync').and.returnValue(true);
 
-            getPreferenceSpy.and.returnValue(DEFAULT_TARGET_API - 1);
+            spyOn(events, 'emit');
 
-            var target = check_reqs.get_target();
+            getPreferenceSpy.and.returnValue(String(DEFAULT_TARGET_API - 1));
+
+            var target = check_reqs.get_target(projectRoot);
 
             expect(getPreferenceSpy).toHaveBeenCalledWith('android-targetSdkVersion', 'android');
             expect(target).toBe('android-' + DEFAULT_TARGET_API);
@@ -376,7 +332,7 @@ describe('check_reqs', function () {
                 fail('Expected promise to be rejected');
             }, err => {
                 expect(err).toEqual(jasmine.any(Error));
-                expect(err.message).toContain('Please install Android target');
+                expect(err.message).toContain('Please install the Android SDK Platform');
             });
         });
     });

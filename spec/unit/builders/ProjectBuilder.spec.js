@@ -32,7 +32,7 @@ describe('ProjectBuilder', () => {
 
     beforeEach(() => {
         execaSpy = jasmine.createSpy('execa').and.returnValue(new Promise(() => {}));
-        ProjectBuilder = rewire('../../../bin/templates/cordova/lib/builders/ProjectBuilder');
+        ProjectBuilder = rewire('../../../lib/builders/ProjectBuilder');
         ProjectBuilder.__set__('execa', execaSpy);
 
         builder = new ProjectBuilder(rootDir);
@@ -43,10 +43,8 @@ describe('ProjectBuilder', () => {
             expect(builder.root).toBe(rootDir);
         });
 
-        it('should set the project directory to three folders up', () => {
-            ProjectBuilder.__set__('__dirname', 'projecttest/platforms/android/app');
-            builder = new ProjectBuilder();
-            expect(builder.root).toMatch(/projecttest$/);
+        it('should throw if project directory is missing', () => {
+            expect(() => new ProjectBuilder()).toThrowError(TypeError);
         });
     });
 
@@ -224,7 +222,7 @@ describe('ProjectBuilder', () => {
             return builder.build({}).then(
                 () => fail('Unexpectedly resolved'),
                 error => {
-                    expect(checkReqsSpy.check_android_target).toHaveBeenCalledWith(testError);
+                    expect(checkReqsSpy.check_android_target).toHaveBeenCalledWith(rootDir);
                     expect(error).toBe(testError);
                 }
             );
@@ -289,7 +287,7 @@ describe('ProjectBuilder', () => {
         });
     });
 
-    describe('fileSorter', () => {
+    describe('outputFileComparator', () => {
         it('should sort APKs from most recent to oldest, deprioritising unsigned arch-specific builds', () => {
             const APKs = {
                 'app-debug.apk': new Date('2018-04-20'),
@@ -309,7 +307,7 @@ describe('ProjectBuilder', () => {
             });
 
             const apkArray = Object.keys(APKs);
-            const sortedApks = apkArray.sort(ProjectBuilder.__get__('fileSorter'));
+            const sortedApks = apkArray.sort(ProjectBuilder.__get__('outputFileComparator'));
 
             expect(sortedApks).toEqual(expectedResult);
         });

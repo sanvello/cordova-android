@@ -18,9 +18,9 @@
 */
 
 var rewire = require('rewire');
-var utils = require('../../bin/lib/utils');
-var create = rewire('../../bin/lib/create');
-var check_reqs = require('../../bin/templates/cordova/lib/check_reqs');
+var utils = require('../../lib/utils');
+var create = rewire('../../lib/create');
+var check_reqs = require('../../lib/check_reqs');
 var fs = require('fs-extra');
 var path = require('path');
 
@@ -117,7 +117,7 @@ describe('create', function () {
         var revert_manifest_mock;
         var project_path = path.join('some', 'path');
         var app_path = path.join(project_path, 'app', 'src', 'main');
-        var default_templates = path.join(__dirname, '..', '..', 'bin', 'templates', 'project');
+        var default_templates = path.join(__dirname, '..', '..', 'templates', 'project');
         var fake_android_target = 'android-1337';
 
         beforeEach(function () {
@@ -132,6 +132,7 @@ describe('create', function () {
             spyOn(create, 'copyBuildRules');
             spyOn(create, 'writeProjectProperties');
             spyOn(create, 'prepBuildFiles');
+            spyOn(create, 'writeNameForAndroidStudio');
             revert_manifest_mock = create.__set__('AndroidManifest', Manifest_mock);
             spyOn(fs, 'existsSync').and.returnValue(false);
             spyOn(fs, 'copySync');
@@ -298,6 +299,26 @@ describe('create', function () {
                     expect(create.prepBuildFiles).toHaveBeenCalledWith(project_path);
                 });
             });
+        });
+    });
+
+    describe('writeNameForAndroidStudio', () => {
+        const project_path = path.join('some', 'path');
+        const appName = 'Test Cordova';
+
+        beforeEach(function () {
+            spyOn(fs, 'ensureDirSync');
+            spyOn(fs, 'writeFileSync');
+        });
+
+        it('should call ensureDirSync with path', () => {
+            create.writeNameForAndroidStudio(project_path, appName);
+            expect(fs.ensureDirSync).toHaveBeenCalledWith(path.join(project_path, '.idea'));
+        });
+
+        it('should call writeFileSync with content', () => {
+            create.writeNameForAndroidStudio(project_path, appName);
+            expect(fs.writeFileSync).toHaveBeenCalledWith(path.join(project_path, '.idea', '.name'), appName);
         });
     });
 });

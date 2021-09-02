@@ -21,7 +21,8 @@
 
 const path = require('path');
 const execa = require('execa');
-const ProjectBuilder = require('../bin/templates/cordova/lib/builders/ProjectBuilder');
+const fs = require('fs-extra');
+const ProjectBuilder = require('../lib/builders/ProjectBuilder');
 
 class AndroidTestRunner {
     constructor (testTitle, projectDir) {
@@ -48,6 +49,14 @@ class AndroidTestRunner {
     run () {
         return Promise.resolve()
             .then(_ => console.log(`[${this.testTitle}] Preparing Gradle wrapper for Java unit tests.`))
+            .then(_ => {
+                // TODO we should probably not only copy these files, but instead create a new project from scratch
+                fs.copyFileSync(path.resolve(this.projectDir, '../../framework/cdv-gradle-config-defaults.json'), path.resolve(this.projectDir, 'cdv-gradle-config.json'));
+                fs.copyFileSync(
+                    path.join(__dirname, '../templates/project/assets/www/cordova.js'),
+                    path.join(this.projectDir, 'app/src/main/assets/www/cordova.js')
+                );
+            })
             .then(_ => this._createProjectBuilder())
             .then(_ => this._gradlew('--version'))
             .then(_ => console.log(`[${this.testTitle}] Gradle wrapper is ready. Running tests now.`))
@@ -58,10 +67,6 @@ class AndroidTestRunner {
 
 Promise.resolve()
     .then(_ => console.log('Starting to run all android platform tests'))
-
-    // Android Test
-    .then(_ => new AndroidTestRunner('Android Project', path.resolve(__dirname, 'android')))
-    .then(test => test.run())
 
     // AndroidX Test
     .then(_ => new AndroidTestRunner('AndroidX Project', path.resolve(__dirname, 'androidx')))

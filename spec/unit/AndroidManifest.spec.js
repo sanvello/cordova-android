@@ -40,7 +40,7 @@ describe('AndroidManifest', () => {
         android:supportsRtl="true" android:debuggable="true">
         <activity android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale"
             android:label="@string/activity_name" android:launchMode="${ACTIVITY_LAUNCH_MODE}"
-            android:name="${ACTIVITY_NAME}" android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:name="${ACTIVITY_NAME}" android:theme="@style/Theme.AppCompat.NoActionBar"
             android:windowSoftInputMode="adjustResize" android:screenOrientation="${ACTIVITY_ORIENTATION}">
             <intent-filter android:label="@string/launcher_name">
                 <action android:name="android.intent.action.MAIN" />
@@ -66,7 +66,7 @@ describe('AndroidManifest', () => {
     beforeEach(() => {
         createTempManifestFile(DEFAULT_MANIFEST);
 
-        AndroidManifest = rewire('../../bin/templates/cordova/lib/AndroidManifest');
+        AndroidManifest = rewire('../../lib/AndroidManifest');
         manifest = new AndroidManifest(manifestPath);
     });
 
