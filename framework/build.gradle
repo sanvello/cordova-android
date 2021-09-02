@@ -23,16 +23,8 @@ buildscript {
     repositories repos
 
     dependencies {
-<<<<<<< HEAD
-        // The gradle plugin and the maven plugin have to be updated after each version of Android
-        // studio comes out
-        classpath 'com.android.tools.build:gradle:4.1.3'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
-=======
         // Android Gradle Plugin (AGP) Build Tools
         classpath "com.android.tools.build:gradle:${cordovaConfig.AGP_VERSION}"
->>>>>>> rel/10.0.0
     }
 }
 
@@ -48,14 +40,6 @@ allprojects {
 }
 
 apply plugin: 'com.android.library'
-<<<<<<< HEAD
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
-
-group = 'org.apache.cordova'
-version = '9.0.0'
-=======
->>>>>>> rel/10.0.0
 
 android {
     compileSdkVersion cordovaConfig.SDK_VERSION
@@ -104,5 +88,4 @@ dependencies {
 def cordovaPublishGradle = './cordova-publish.gradle'
 if(file(cordovaPublishGradle).exists()) {
     apply from: cordovaPublishGradle
->>>>>>> rel/10.0.0
 }
