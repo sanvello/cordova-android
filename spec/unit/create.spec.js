@@ -132,7 +132,6 @@ describe('create', function () {
             spyOn(create, 'copyBuildRules');
             spyOn(create, 'writeProjectProperties');
             spyOn(create, 'prepBuildFiles');
-            spyOn(create, 'writeNameForAndroidStudio');
             revert_manifest_mock = create.__set__('AndroidManifest', Manifest_mock);
             spyOn(fs, 'existsSync').and.returnValue(false);
             spyOn(fs, 'copySync');
@@ -148,10 +147,10 @@ describe('create', function () {
         });
 
         describe('parameter values and defaults', function () {
-            it('should have a default package name of my.cordova.project', () => {
+            it('should have a default package name of io.cordova.helloCordova', () => {
                 config_mock.packageName.and.returnValue(undefined);
                 return create.create(project_path, config_mock, {}, events_mock).then(() => {
-                    expect(create.validatePackageName).toHaveBeenCalledWith('my.cordova.project');
+                    expect(create.validatePackageName).toHaveBeenCalledWith('io.cordova.helloCordova');
                 });
             });
 
@@ -162,10 +161,10 @@ describe('create', function () {
                 });
             });
 
-            it('should have a default project name of CordovaExample', () => {
+            it('should have a default project name of Hello Cordova', () => {
                 config_mock.name.and.returnValue(undefined);
                 return create.create(project_path, config_mock, {}, events_mock).then(() => {
-                    expect(create.validateProjectName).toHaveBeenCalledWith('CordovaExample');
+                    expect(create.validateProjectName).toHaveBeenCalledWith('Hello Cordova');
                 });
             });
 
@@ -176,10 +175,10 @@ describe('create', function () {
                 });
             });
 
-            it('should replace any non-word characters (including unicode and spaces) in the ConfigParser-provided project name with underscores', () => {
+            it('should keep non-word characters (including unicode and spaces) in the ConfigParser-provided project name', () => {
                 config_mock.name.and.returnValue('応応応応 hello 用用用用');
                 return create.create(project_path, config_mock, {}, events_mock).then(() => {
-                    expect(create.validateProjectName).toHaveBeenCalledWith('_____hello_____');
+                    expect(create.validateProjectName).toHaveBeenCalledWith('応応応応 hello 用用用用');
                 });
             });
 
@@ -299,26 +298,6 @@ describe('create', function () {
                     expect(create.prepBuildFiles).toHaveBeenCalledWith(project_path);
                 });
             });
-        });
-    });
-
-    describe('writeNameForAndroidStudio', () => {
-        const project_path = path.join('some', 'path');
-        const appName = 'Test Cordova';
-
-        beforeEach(function () {
-            spyOn(fs, 'ensureDirSync');
-            spyOn(fs, 'writeFileSync');
-        });
-
-        it('should call ensureDirSync with path', () => {
-            create.writeNameForAndroidStudio(project_path, appName);
-            expect(fs.ensureDirSync).toHaveBeenCalledWith(path.join(project_path, '.idea'));
-        });
-
-        it('should call writeFileSync with content', () => {
-            create.writeNameForAndroidStudio(project_path, appName);
-            expect(fs.writeFileSync).toHaveBeenCalledWith(path.join(project_path, '.idea', '.name'), appName);
         });
     });
 });
