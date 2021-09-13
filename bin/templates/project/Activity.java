@@ -36,6 +36,32 @@ public class __ACTIVITY__ extends CordovaActivity
         }
 
         // Set by <content src="index.html" /> in config.xml
-        loadUrl(launchUrl);
+        try {
+            loadUrl(launchUrl);
+        } catch (RuntimeException exception) {
+            handleMissingWebview();
+        }
+    }
+
+    private void handleMissingWebview() {
+        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        alertDialog.setTitle("Error");
+        alertDialog.setMessage(Html.fromHtml("" +
+                "<p>We're sorry but Android System WebView is required to open Sanvello. " +
+                "You can download and install WebView from the Google Play Store." +
+                "</p>" +
+                "<br />" +
+                "Have any questions? Contact <a href=\"mailto:info@sanvello.com?subject=Feedback&body=Message\">info@sanvello.com</a> for support."));
+        alertDialog.setCancelable(false);
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL,"Okay, got it.", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                alertDialog.dismiss();
+                finishAndRemoveTask();
+            }
+        });
+        alertDialog.setIcon(android.R.drawable.stat_notify_error);
+        alertDialog.show();
+        ((TextView)alertDialog.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
     }
 }
