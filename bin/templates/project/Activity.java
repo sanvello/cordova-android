@@ -51,7 +51,7 @@ public class __ACTIVITY__ extends CordovaActivity
                 "You can download and install WebView from the Google Play Store." +
                 "</p>" +
                 "<br />" +
-                "Have any questions? Contact <a href=\"mailto:info@sanvello.com?subject=Feedback&body=Message\">info@sanvello.com</a> for support."));
+                "Have any questions? Contact <a href=\"mailto:info@sanvello.com?subject=Sanvello%20Support%20-%20Missing%20Android%20System%20WebView\">info@sanvello.com</a> for support."));
         alertDialog.setCancelable(false);
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL,"Okay, got it.", new DialogInterface.OnClickListener() {
             @Override
