@@ -19,7 +19,13 @@
 
 package __ID__;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
+import android.widget.TextView;
+
 import org.apache.cordova.*;
 
 public class __ACTIVITY__ extends CordovaActivity
