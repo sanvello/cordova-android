@@ -20,19 +20,21 @@
 const rewire = require('rewire');
 
 const CordovaError = require('cordova-common').CordovaError;
-const ProjectBuilder = require('../../../bin/templates/cordova/lib/builders/ProjectBuilder');
+const ProjectBuilder = require('../../../lib/builders/ProjectBuilder');
 
 describe('builders', () => {
     let builders;
 
     beforeEach(() => {
-        builders = rewire('../../../bin/templates/cordova/lib/builders/builders');
+        builders = rewire('../../../lib/builders/builders');
     });
 
     describe('getBuilder', () => {
         it('should return an instance of ProjectBuilder when gradle is requested', () => {
-            const newBuilder = builders.getBuilder();
+            const root = 'FakeProjectRoot';
+            const newBuilder = builders.getBuilder(root);
             expect(newBuilder).toEqual(jasmine.any(ProjectBuilder));
+            expect(newBuilder.root).toBe(root);
         });
 
         it('should throw an error if a builder cannot be instantiated', () => {

@@ -18,13 +18,13 @@
 */
 
 const rewire = require('rewire');
-const builders = require('../../bin/templates/cordova/lib/builders/builders');
+const builders = require('../../lib/builders/builders');
 
 describe('run', () => {
     let run;
 
     beforeEach(() => {
-        run = rewire('../../bin/templates/cordova/lib/run');
+        run = rewire('../../lib/run');
         run.__set__({
             events: jasmine.createSpyObj('eventsSpy', ['emit'])
         });
@@ -56,20 +56,36 @@ describe('run', () => {
 
             run.__set__({
                 target: targetSpyObj,
-                emulator: emulatorSpyObj
+                emulator: emulatorSpyObj,
+                AndroidManifest: class {}
+            });
+
+            const builder = builders.getBuilder('FakeRootPath');
+            spyOn(builder, 'fetchBuildResults').and.returnValue({
+                buildType: 'debug',
+                apkPaths: ['fake.apk']
             });
 
             // run needs `this` to behave like an Api instance
             run.run = run.run.bind({
-                _builder: builders.getBuilder('FakeRootPath')
+                _builder: builder,
+                locations: { manifest: 'FakeManifestPath' }
             });
         });
 
         it('should install on target after build', () => {
+            const AndroidManifest = run.__get__('AndroidManifest');
+
             return run.run().then(() => {
                 expect(targetSpyObj.install).toHaveBeenCalledWith(
                     resolvedTarget,
-                    { apkPaths: [], buildType: 'debug' }
+                    {
+                        manifest: jasmine.any(AndroidManifest),
+                        buildResults: {
+                            buildType: 'debug',
+                            apkPaths: ['fake.apk']
+                        }
+                    }
                 );
             });
         });
@@ -77,17 +93,7 @@ describe('run', () => {
         it('should fail with the error message if --packageType=bundle setting is used', () => {
             targetSpyObj.resolve.and.resolveTo(resolvedTarget);
             return expectAsync(run.run({ argv: ['--packageType=bundle'] }))
-                .toBeRejectedWith(jasmine.stringMatching(/Package type "bundle" is not supported/));
-        });
-    });
-
-    describe('help', () => {
-        it('should print out usage and help', () => {
-            spyOn(console, 'log');
-            spyOn(process, 'exit');
-
-            run.help();
-            expect(console.log).toHaveBeenCalledWith(jasmine.stringMatching(/^Usage:/));
+                .toBeRejectedWithError(/Package type "bundle" is not supported/);
         });
     });
 });
