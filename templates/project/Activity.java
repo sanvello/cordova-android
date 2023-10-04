@@ -20,6 +20,7 @@
 package __ID__;
 
 import android.os.Bundle;
+
 import org.apache.cordova.*;
 import android.app.AlertDialog;
 import android.content.DialogInterface;

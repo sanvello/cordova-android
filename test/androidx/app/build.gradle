@@ -21,8 +21,10 @@ apply plugin: 'com.android.application'
 apply from: '../../../framework/cordova.gradle'
 
 android {
-    compileSdkVersion cordovaConfig.SDK_VERSION
+    compileSdkVersion cordovaConfig.COMPILE_SDK_VERSION
     buildToolsVersion cordovaConfig.BUILD_TOOLS_VERSION
+
+    namespace 'org.apache.cordova.unittests'
 
     defaultConfig {
         applicationId "org.apache.cordova.unittests"
