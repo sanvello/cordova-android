@@ -159,10 +159,14 @@ public class SystemWebViewEngine implements CordovaWebViewEngine {
         // @todo remove when Cordova drop API level 26 support
         settings.setSaveFormData(false);
 
-        // Jellybean rightfully tried to lock this down. Too bad they didn't give us a whitelist
-        // while we do this
-        settings.setAllowUniversalAccessFromFileURLs(true);
-        settings.setAllowFileAccess(true);
+        if (preferences.getBoolean("AndroidInsecureFileModeEnabled", false)) {
+            //These settings are deprecated and loading content via file:// URLs is generally discouraged,
+            //but we allow this for compatibility reasons
+            LOG.d(TAG, "Enabled insecure file access");
+            settings.setAllowFileAccess(true);
+            settings.setAllowUniversalAccessFromFileURLs(true);
+            cookieManager.setAcceptFileSchemeCookies();
+        }
 
         settings.setMediaPlaybackRequiresUserGesture(false);
 
@@ -171,9 +175,20 @@ public class SystemWebViewEngine implements CordovaWebViewEngine {
         String databasePath = webView.getContext().getApplicationContext().getDir("database", Context.MODE_PRIVATE).getPath();
         settings.setDatabaseEnabled(true);
 
-        //Determine whether we're in debug or release mode, and turn on Debugging!
-        ApplicationInfo appInfo = webView.getContext().getApplicationContext().getApplicationInfo();
-        if ((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+        // The default is to use the module's debuggable state to decide if the webview inspecter
+        // should be enabled. However, users can configure InspectableWebview preference to forcefully enable
+        // or disable the webview inspecter.
+        String inspectableWebview = preferences.getString("InspectableWebview", null);
+        boolean shouldEnableInspector = false;
+        if (inspectableWebview == null) {
+            ApplicationInfo appInfo = webView.getContext().getApplicationContext().getApplicationInfo();
+            shouldEnableInspector = (appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        }
+        else if ("true".equals(inspectableWebview)) {
+            shouldEnableInspector = true;
+        }
+
+        if (shouldEnableInspector) {
             enableRemoteDebugging();
         }
 
