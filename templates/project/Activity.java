@@ -70,4 +70,14 @@ public class __ACTIVITY__ extends CordovaActivity
         alertDialog.show();
         ((TextView)alertDialog.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
     }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+
+        if (this.appView != null) {
+            this.appView.clearCache();
+        }
+    }
 }
